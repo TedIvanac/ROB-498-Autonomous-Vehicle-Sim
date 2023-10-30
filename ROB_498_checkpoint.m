@@ -11,14 +11,14 @@ lf = 0.9;       % Distance from the center of mass to the front wheel (m)
 lr = 0.9;       % Distance from the center of mass to the rear wheel (m)
 % Cf = 1600;      % Front tire cornering stiffness (N/rad)
 % Cr = 1800;      % Rear tire cornering stiffness (N/rad)
-throttle_force = 200;  % Throttle force in Newtons
+throttle_force = 3000;  % Throttle force in Newtons
 
 % State Variables
 X = 0;          % X position (m)
 Y = 0;          % Y position (m)
 Theta = 0;      % Yaw angle (rad)
-Delta = 0;
-V = 0;
+Delta = pi/36;
+V = 2;
 
 % Time Parameters
 dt = 0.01;      % Time step (s)
@@ -28,12 +28,13 @@ t_end = 10;     % Simulation time (s)
 time = 0:dt:t_end;
 
 %Replace sim loop
-[t,output_state] = ode45(@bicycleDynamics, [0, t_end], [X;Y;Theta;Delta;V]);
+[t,output_state] = ode45(@(t,output_state) bicycleDynamics(t,output_state,throttle_force,Delta), [0, t_end], [X;Y;Theta;V]);
+%[t,y] = ode45(@(t,y) odefcn(t,y,A,B), tspan, y0);
 
 X_history = output_state(:,1);
 Y_history = output_state(:,2);
 Psi_history = output_state(:,3);
-velocity_history = output_state(:,5);
+velocity_history = output_state(:,4);
 
 % Plot results
 figure;

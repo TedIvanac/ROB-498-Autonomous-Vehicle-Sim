@@ -1,4 +1,4 @@
-function dydt = bicycleDynamics(t, input)
+function dydt = bicycleDynamics(t, input, throttle_force,delta)
 
 % Bicycle Model Parameters
 m = 1519.988;         % Mass of the bicycle and rider (kg)
@@ -18,19 +18,19 @@ theta_g = 0;    %Angle of vehicle with ground
 
 % Steering angle
 delta_time = 0:0.01:10;
-delta = [zeros(1,351),ones(1,300)*pi/36,zeros(1,350)];
+delta = [zeros(1,351),ones(1,300)*delta,zeros(1,350)];
 delta_q = interp1(delta_time,delta, t);
 
 %Throttle
 throttle_time = 0:0.01:10;
-throttle_force = [zeros(1,350 + 1),zeros(1,200)*3000,zeros(1,100)*-3000,zeros(1,350)];
-throttle_force_q = interp1(throttle_time,throttle_force, t);
+throttle_force_array = [zeros(1,350 + 1),throttle_force*ones(1,200),ones(1,100)*-throttle_force,zeros(1,350)];
+throttle_force_q = interp1(throttle_time,throttle_force_array, t)
 
 % Extract state variables from y
 x = input(1);
 y = input(2);
 theta = input(3);
-v = input(5);
+v = input(4);
 %delta = input(4);
 %throttle_force = input(5);  % Throttle force in Newtons
 
@@ -47,10 +47,10 @@ Fyr = -Cr * atan((lf * delta) / (lr + lf));
 Xdot = v * cos(theta);
 Ydot = v * sin(theta);
 Omega = v * (tan(delta_q)/(lf+lr));
-Delta_dot = 0;
+%Delta_dot = 0;
 acceleration = (throttle_force_q - W*sin(theta_g) - f*W*cos(theta_g) - Da) / m;
 
 % Create a column vector with derivatives of x, y, theta, delta, and v
-dydt = [Xdot; Ydot; Omega; Delta_dot;acceleration];
+dydt = [Xdot; Ydot; Omega; acceleration];
 
 end
