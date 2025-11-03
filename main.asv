@@ -1,0 +1,89 @@
+clc;
+clear ROB_498_checkpoint.m;
+clear full_sys.m;
+clear waypoints.m;
+clear steering_control.m;
+
+close all;
+
+%Simulation with this model (nonlinear)
+
+%Find a path
+blank = binaryOccupancyMap(80,200); %Generates an empty map
+obstacle = mapClutter(20, {'Box'},'MapSize',[20,20]); %Creates a map with obstacles using the mapClutter function
+blankPlanner = plannerAStarGrid(blank); %Creates a planner to traverse the empty map
+obstaclePlanner = plannerAStarGrid(obstacle); %Creates a planner to traverse the path with obstacles
+
+start = [5,4];
+goal = [50, 50];
+blankWay = plan(blankPlanner,start,goal);
+obstacleWay = plan(obstaclePlanner,start,goal);
+save('pathfile.mat', 'blankWay', 'obstacleWay');
+show(blankPlanner)
+figure
+show(obstaclePlanner)
+
+path = load("pathfile.mat",'obstacleWay');
+pathway = path.obstacleWay;
+sampling_factor = 5;
+WaypointlistX = pathway(1:sampling_factor:length(pathway), 1);
+WaypointlistY = pathway(1:sampling_factor:length(pathway), 2);
+
+% State Variables
+X = 4;          % X position (m)
+Y = 4;          % Y position (m)
+Theta = 0;      % Yaw angle (rad)
+Delta = 0;
+V = 8;
+int_e_v = 0;
+int_e_s = 0;
+
+% Time Parameter
+t_end = 60;     % Simulation time (s)
+dt = 0.00001;
+
+%Creating an event
+odeFcn = @(t,y) full_sys(t, y);
+% options = odeset('OutputFcn',@(t,y,flag) deltaOutputFn(t,y,flag,WaypointlistX,WaypointlistY));
+[t, output_state] = ode45(odeFcn, 0:dt:t_end, [X;Y;Theta;V; int_e_v; int_e_s]);
+
+% Initialize arrays to store results
+X_history = output_state(:,1);
+Y_history = output_state(:,2);
+Theta_history = output_state(:,3);
+velocity_history = output_state(:,4);
+
+% Plot results
+figure;
+subplot(4, 1, 1);
+plot(t, X_history);
+xlabel('Time (s)');
+ylabel('X Position (m)');
+
+subplot(4, 1, 2);
+plot(t, Y_history);
+xlabel('Time (s)');
+ylabel('Y Position (m)');
+
+subplot(4, 1, 3);
+plot(t, Theta_history);
+xlabel('Time (s)');
+ylabel('Yaw Angle (rad)');
+
+subplot(4, 1, 4);
+plot(t, velocity_history);
+xlabel('Time (s)');
+ylabel('Velocity (m/s)');
+
+
+figure
+hold on
+plot(X_history,Y_history)
+title(['Bicycle Model Trajectory to Goal: ', num2str(goal[0])]);
+xlabel('X Position (m)');
+ylabel('Y Position (m)');
+% WaypointlistX = pathway(1:10:end,1); %(m)
+% WaypointlistY = pathway(1:10:end,2); %(m)
+plot(WaypointlistX,WaypointlistY, "o")
+legend("Trajectory","Waypoints")
+hold off
